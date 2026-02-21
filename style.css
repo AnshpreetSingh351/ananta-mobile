@@ -824,3 +824,56 @@ body {
     display: none !important;
   }
 }
+/* =========================
+   MOBILE SAFE MODE
+========================= */
+@media (max-width: 768px) {
+
+  /* Kill canvas system on mobile */
+  .scroll-video canvas {
+    display: none !important;
+  }
+
+  /* Show normal videos instead */
+  .scroll-video video {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+  }
+
+  /* Disable heavy effects */
+  .film-grain,
+  .spotlight,
+  .corner-light {
+    display: none !important;
+  }
+
+  /* Keep overlay above video */
+  .overlay-content {
+    z-index: 3;
+  }
+
+  /* Text card stays readable */
+  .text-panel,
+  .left-aligned-panel .text-panel {
+    width: 92% !important;
+    padding: 20px !important;
+    background: rgba(0,0,0,0.65);
+    border-radius: 14px;
+    text-align: center;
+  }
+
+  /* Hide bottom meta bar on mobile (as you wanted) */
+  .meta-bar {
+    display: none !important;
+  }
+
+  /* Hide side label */
+  .side-label {
+    display: none !important;
+  }
+}
