@@ -375,3 +375,12 @@ const toggleObserver = new IntersectionObserver((entries) => {
 });
 
 toggleElements.forEach(el => toggleObserver.observe(el));
+const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+if (!isMobile) {
+  // ✅ Your existing canvas scroll-video code runs here
+  initScrollVideos(); // or whatever your function is
+} else {
+  // ❌ Do nothing on mobile (videos will play normally)
+  console.log("Mobile safe mode active");
+}
