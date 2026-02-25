@@ -389,13 +389,21 @@ body {
   opacity: 0.7;
   z-index: 3;
 }
+@media (max-width: 768px) {
+  .scroll-video {
+    height: calc(100vh + 600vh) !important; /* ⬅️ slow, cinematic */
+  }
 
+  .scroll-spacer {
+    display: none;
+  }
+}
 /* =========================
    SCROLL VIDEO SECTIONS
 ========================= */
 .scroll-video {
   position: relative;
-  height: calc(100vh + 400vh) !important; /* much slower, smoother */
+
 }
 
 .sticky-wrap {
@@ -1151,9 +1159,14 @@ body {
     display: none !important;
   }
 }
-/* iOS Specific Fixes */
-.ios-device .scroll-video {
-  height: calc(100vh + 200vh); /* Shorter scroll on iOS */
+@media (max-width: 768px) {
+  .scroll-video {
+    height: calc(100vh + 700vh) !important;  /* 🔥 slow, cinematic */
+  }
+
+  .scroll-spacer {
+    display: none;
+  }
 }
 
 .ios-device .sticky-wrap {

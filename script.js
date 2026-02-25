@@ -218,13 +218,12 @@ class MobileScrollVideo {
       this.onScroll(); // initial sync
     });
   }
-
 onScroll() {
   const sectionTop = this.section.offsetTop;
   const sectionHeight = this.section.offsetHeight;
   const windowH = window.innerHeight;
 
-  const scrollLength = Math.max(1, sectionHeight - windowH);
+  const scrollLength = Math.max(1, sectionHeight - windowH); // prevent divide by 0
   const scrolled = window.scrollY - sectionTop;
 
   let progress = scrolled / scrollLength;
@@ -233,8 +232,8 @@ onScroll() {
   if (this.video.duration) {
     const target = progress * this.video.duration;
 
-    // 👇 Smooth easing (lower = slower, smoother)
-    this.video.currentTime += (target - this.video.currentTime) * 0.2;
+    // 🎬 Smooth, slow cinematic easing (perfect for iPhone 13)
+    this.video.currentTime += (target - this.video.currentTime) * 0.18;
   }
 }
 }
