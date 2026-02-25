@@ -1161,7 +1161,7 @@ body {
 }
 @media (max-width: 768px) {
   .scroll-video {
-    height: calc(100vh + 2500vh) !important;  /* 🔥 slow, cinematic */
+    height: calc(400vh + 2500vh) !important;  /* 🔥 slow, cinematic */
   }
 
   .scroll-spacer {
