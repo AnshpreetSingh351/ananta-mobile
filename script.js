@@ -219,21 +219,23 @@ class MobileScrollVideo {
     });
   }
 
-  onScroll() {
-    const sectionTop = this.section.offsetTop;
-    const sectionHeight = this.section.offsetHeight;
-    const windowH = window.innerHeight;
+onScroll() {
+  const sectionTop = this.section.offsetTop;
+  const sectionHeight = this.section.offsetHeight;
+  const windowH = window.innerHeight;
 
-    const scrollLength = sectionHeight - windowH;
-    const scrolled = window.scrollY - sectionTop;
+  const scrollLength = Math.max(1, sectionHeight - windowH); // 👈 prevent 0
+  const scrolled = window.scrollY - sectionTop;
 
-    let progress = scrolled / scrollLength;
-    progress = Math.min(Math.max(progress, 0), 1);
+  let progress = scrolled / scrollLength;
+  progress = Math.min(Math.max(progress, 0), 1);
 
-    if (this.video.duration) {
-      this.video.currentTime = progress * this.video.duration;
-    }
+  if (this.video.duration) {
+    const target = progress * this.video.duration;
+    // small smoothing for iPhone
+    this.video.currentTime += (target - this.video.currentTime) * 0.35;
   }
+}
 }
 
 // ==================== DEVICE DETECTION ====================
