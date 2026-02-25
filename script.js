@@ -224,7 +224,7 @@ onScroll() {
   const sectionHeight = this.section.offsetHeight;
   const windowH = window.innerHeight;
 
-  const scrollLength = Math.max(1, sectionHeight - windowH); // 👈 prevent 0
+  const scrollLength = Math.max(1, sectionHeight - windowH);
   const scrolled = window.scrollY - sectionTop;
 
   let progress = scrolled / scrollLength;
@@ -232,8 +232,9 @@ onScroll() {
 
   if (this.video.duration) {
     const target = progress * this.video.duration;
-    // small smoothing for iPhone
-    this.video.currentTime += (target - this.video.currentTime) * 0.35;
+
+    // 👇 Smooth easing (lower = slower, smoother)
+    this.video.currentTime += (target - this.video.currentTime) * 0.2;
   }
 }
 }

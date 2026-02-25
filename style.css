@@ -395,7 +395,7 @@ body {
 ========================= */
 .scroll-video {
   position: relative;
-  height: calc(100vh + 300vh);
+  height: calc(100vh + 400vh) !important; /* much slower, smoother */
 }
 
 .sticky-wrap {
