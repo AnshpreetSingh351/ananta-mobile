@@ -1,4 +1,5 @@
-class ScrollVideoSection {
+// ==================== DESKTOP VERSION (Full Features) ====================
+class DesktopScrollVideo {
   constructor(section) {
     this.section = section;
     this.canvas = section.querySelector("canvas");
@@ -6,10 +7,9 @@ class ScrollVideoSection {
 
     this.src = section.dataset.video;
     this.duration = Number(section.dataset.duration || 0);
-    this.fps = Number(section.dataset.fps || 60);
-    this.sampleEvery = Number(section.dataset.sample || 2);
+    this.fps = Number(section.dataset.fps || 30);
+    this.sampleEvery = Number(section.dataset.sample || 4);
 
-    // ✅ intro only
     this.autoplaySeconds = Number(section.dataset.autoplay || 0);
     this.isIntro = this.autoplaySeconds > 0;
 
@@ -17,6 +17,7 @@ class ScrollVideoSection {
 
     this.frames = [];
     this.ready = false;
+    this.fallbackMode = false;
 
     this.resize = this.resize.bind(this);
     this.onScroll = this.onScroll.bind(this);
@@ -24,17 +25,16 @@ class ScrollVideoSection {
     this.init();
   }
 
-  init() {
+  async init() {
     this.resize();
     window.addEventListener("resize", this.resize);
 
     if (this.isIntro) {
-      // ✅ INTRO mode = 2 videos (playback + extractor)
       this.videoPlayback = this.section.querySelector("video.playback");
       this.videoExtractor = this.section.querySelector("video.extractor");
 
       if (!this.videoPlayback || !this.videoExtractor) {
-        console.error("Intro section needs 2 videos: .playback + .extractor");
+        console.error("Intro section needs 2 videos");
         return;
       }
 
@@ -48,21 +48,14 @@ class ScrollVideoSection {
       this.videoExtractor.load();
 
       this.videoExtractor.addEventListener("loadeddata", async () => {
-        // ✅ extract frames first
         await this.extractFrames(this.videoExtractor);
-
         this.ready = true;
-
-        // ✅ autoplay on canvas
         await this.playIntroOnCanvas(this.videoPlayback, this.autoplaySeconds);
-
-        // ✅ enable scroll after autoplay
         this.onScroll();
         window.addEventListener("scroll", this.onScroll);
       });
 
     } else {
-      // ✅ NORMAL mode = 1 video only
       this.video = this.section.querySelector("video");
 
       if (!this.video) {
@@ -71,7 +64,6 @@ class ScrollVideoSection {
       }
 
       this.setupVideo(this.video);
-
       this.video.src = this.src;
       this.video.load();
 
@@ -79,17 +71,17 @@ class ScrollVideoSection {
         await this.extractFrames(this.video);
         this.ready = true;
         this.drawFrame(0);
-
         window.addEventListener("scroll", this.onScroll);
       });
     }
   }
-setupVideo(video) {
-  video.crossOrigin = "anonymous";
-  video.muted = true;
-  video.playsInline = true;
-  video.preload = "metadata"; // ✅ not auto
-}
+
+  setupVideo(video) {
+    video.crossOrigin = "anonymous";
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+  }
 
   resize() {
     const dpr = window.devicePixelRatio || 1;
@@ -117,7 +109,7 @@ setupVideo(video) {
         this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
         this.ctx.drawImage(video, 0, 0, window.innerWidth, window.innerHeight);
 
-        if (elapsed >= seconds) {
+        if (elapsed >= seconds || video.paused || video.ended) {
           video.pause();
           resolve();
           return;
@@ -162,7 +154,6 @@ setupVideo(video) {
       1
     );
 
-    // ✅ intro scroll starts after autoplay frame offset
     let startFrame = 0;
     if (this.isIntro) {
       startFrame = Math.floor((this.autoplaySeconds * this.fps) / this.sampleEvery);
@@ -184,194 +175,312 @@ setupVideo(video) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".scroll-video").forEach(section => {
-    new ScrollVideoSection(section);
-  });
-});
+// ==================== MOBILE VERSION (Optimized for speed) ====================
+class MobileScrollVideo {
+  constructor(section) {
+    this.section = section;
+    this.video = section.querySelector("video");
+    this.canvas = section.querySelector("canvas");
 
+    if (!this.video) return;
 
+    // Hide canvas on mobile
+    if (this.canvas) this.canvas.style.display = "none";
 
+    this.src = section.dataset.video;
 
-document.addEventListener("DOMContentLoaded", () => {
-  const reveals = document.querySelectorAll(".reveal");
+    // Setup video
+    this.video.muted = true;
+    this.video.playsInline = true;
+    this.video.preload = "auto";
+    this.video.setAttribute("playsinline", "");
+    this.video.setAttribute("webkit-playsinline", "");
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("active");
-        } else {
-          // Remove when out of view → so it can replay
-          entry.target.classList.remove("active");
-        }
-      });
-    },
-    {
-      threshold: 0.2 // 20% visible triggers animation
+    // Style video
+    this.video.style.display = "block";
+    this.video.style.position = "absolute";
+    this.video.style.inset = "0";
+    this.video.style.width = "100%";
+    this.video.style.height = "100%";
+    this.video.style.objectFit = "cover";
+
+    // Set source
+    if (this.src && !this.video.src) {
+      this.video.src = this.src;
+      this.video.load();
     }
-  );
 
-  reveals.forEach(el => observer.observe(el));
-});
+    this.onScroll = this.onScroll.bind(this);
 
-
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  const reveals = document.querySelectorAll(".reveal");
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("active");
-      } else {
-        entry.target.classList.remove("active"); // reset for replay
-      }
-    });
-  }, {
-    threshold: 0.25
-  });
-
-  reveals.forEach(el => observer.observe(el));
-});
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  const reveals = document.querySelectorAll(".reveal");
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("active");
-      } else {
-        entry.target.classList.remove("active"); // replay on scroll
-      }
-    });
-  }, {
-    threshold: 0.2
-  });
-
-  reveals.forEach(el => observer.observe(el));
-});
-
-
-
-
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  const staggerItems = document.querySelectorAll(".reveal-stagger");
-
-  const staggerObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        staggerItems.forEach((item, index) => {
-          setTimeout(() => {
-            item.classList.add("active");
-          }, index * 200); // delay between items
-        });
-      } else {
-        // reset so it can replay
-        staggerItems.forEach(item => item.classList.remove("active"));
-      }
-    });
-  }, {
-    threshold: 0.2
-  });
-
-  // Observe the section title as trigger
-  const amenitiesSection = document.querySelector(".amenities-title");
-  if (amenitiesSection) staggerObserver.observe(amenitiesSection);
-});
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  const title = document.querySelector(".intro-title");
-  const subtitle = document.querySelector(".intro-sub");
-
-  function splitText(el, delayStart = 0) {
-    const text = el.innerText;
-    el.innerHTML = "";
-
-    text.split("").forEach((char, index) => {
-      const span = document.createElement("span");
-      span.textContent = char === " " ? "\u00A0" : char; // keep spaces
-      span.style.animationDelay = `${delayStart + index * 0.08}s`;
-      el.appendChild(span);
+    this.video.addEventListener("loadedmetadata", () => {
+      this.video.pause(); // we control it via scroll
+      window.addEventListener("scroll", this.onScroll, { passive: true });
+      this.onScroll(); // initial sync
     });
   }
 
-  // Split and animate
-  splitText(title, 0);
-  splitText(subtitle, 0.8); // subtitle starts after title
-});
-   document.addEventListener('DOMContentLoaded', () => {
-            AOS.init({ duration: 1000, once: false });
+  onScroll() {
+    const sectionTop = this.section.offsetTop;
+    const sectionHeight = this.section.offsetHeight;
+    const windowH = window.innerHeight;
 
-            // 1. Background Scroll Logic
-            const bgObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        document.body.style.backgroundColor = entry.target.getAttribute('data-bg');
-                    }
-                });
-            }, { threshold: 0.4 });
-            document.querySelectorAll('section[data-bg]').forEach(s => bgObserver.observe(s));
+    const scrollLength = sectionHeight - windowH;
+    const scrolled = window.scrollY - sectionTop;
 
-            // 2. Blur Reveal Logic
-            const blurObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) entry.target.classList.add('active');
-                });
-            }, { threshold: 0.25 });
-            const blurTarget = document.querySelector('.reveal-blur');
-            if (blurTarget) blurObserver.observe(blurTarget);
+    let progress = scrolled / scrollLength;
+    progress = Math.min(Math.max(progress, 0), 1);
 
-            // 3. Simple Parallax Effect
-            window.addEventListener('scroll', () => {
-                const scrolled = window.pageYOffset;
-                const parallaxImages = document.querySelectorAll('.parallax-img');
-                parallaxImages.forEach(img => {
-                    let speed = 0.15;
-                    img.style.transform = `translateY(${scrolled * speed}px) scale(1.1)`;
-                });
-            });
-        });
+    if (this.video.duration) {
+      this.video.currentTime = progress * this.video.duration;
+    }
+  }
+}
 
+// ==================== DEVICE DETECTION ====================
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
 
-        // ===== 3D Parallax Hero Title =====
-const hero = document.getElementById("hero3D");
+// ==================== SHARED ANIMATIONS (Work on both devices) ====================
 
-document.addEventListener("mousemove", (e) => {
-  const { innerWidth, innerHeight } = window;
-
-  const x = (e.clientX / innerWidth - 0.5) * 20; // rotate range
-  const y = (e.clientY / innerHeight - 0.5) * 20;
-
-  hero.style.transform = `
-    rotateY(${x}deg)
-    rotateX(${-y}deg)
-  `;
-});
-
-// Smooth return to center when mouse leaves
-document.addEventListener("mouseleave", () => {
-  hero.style.transform = "rotateX(0deg) rotateY(0deg)";
-});
-// ===== Scroll In / Out Toggle Animation =====
-const toggleElements = document.querySelectorAll(".reveal-toggle");
-
-const toggleObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add("is-visible");
+// Initialize everything when DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  const mobile = isMobile();
+  
+  console.log("Device detected:", mobile ? "MOBILE" : "DESKTOP");
+  
+  // Add device class to body
+  document.body.classList.add(mobile ? 'mobile-device' : 'desktop-device');
+  
+  // Initialize videos based on device
+  document.querySelectorAll(".scroll-video").forEach(section => {
+    if (mobile) {
+      new MobileScrollVideo(section);
     } else {
-      entry.target.classList.remove("is-visible");
+      new DesktopScrollVideo(section);
     }
   });
-}, {
-  threshold: 0.4
+
+  // ========== TEXT REVEAL ANIMATIONS (Same for all devices) ==========
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("active", "is-visible");
+      } else {
+        entry.target.classList.remove("active", "is-visible");
+      }
+    });
+  }, {
+    threshold: 0.2
+  });
+
+  // Observe all reveal elements
+  document.querySelectorAll(".reveal, .reveal-toggle, .reveal-stagger, .section-title, .section-description").forEach(el => {
+    observer.observe(el);
+  });
+
+  // ========== STAGGER ANIMATION FOR AMENITIES ==========
+  const staggerObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const items = document.querySelectorAll(".feature-card");
+        items.forEach((item, index) => {
+          setTimeout(() => {
+            item.classList.add("active");
+          }, index * 100);
+        });
+      }
+    });
+  }, {
+    threshold: 0.2
+  });
+
+  const amenitiesSection = document.querySelector(".amenities-section");
+  if (amenitiesSection) staggerObserver.observe(amenitiesSection);
+
+  // ========== SPLIT TEXT ANIMATION FOR INTRO ==========
+  const title = document.querySelector(".intro-title");
+  if (title) {
+    const text = title.innerText;
+    title.innerHTML = "";
+    text.split("").forEach((char, index) => {
+      const span = document.createElement("span");
+      span.textContent = char === " " ? "\u00A0" : char;
+      span.style.animationDelay = `${index * 0.05}s`;
+      span.style.display = "inline-block";
+      span.style.opacity = "0";
+      span.style.animation = "fadeInUp 0.5s ease forwards";
+      title.appendChild(span);
+    });
+  }
+
+  // Add keyframe animation for text
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
+  // ========== AOS INITIALIZATION ==========
+  if (typeof AOS !== 'undefined') {
+    AOS.init({ 
+      duration: 1000, 
+      once: false 
+    });
+  }
+
+  // ========== 3D PARALLAX HERO (DESKTOP ONLY) ==========
+  if (!mobile) {
+    const hero = document.getElementById("hero3D");
+    if (hero) {
+      document.addEventListener("mousemove", (e) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 10;
+        const y = (e.clientY / window.innerHeight - 0.5) * 10;
+        hero.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+      });
+
+      document.addEventListener("mouseleave", () => {
+        hero.style.transform = "rotateX(0deg) rotateY(0deg)";
+      });
+    }
+  }
+
+  // ========== LOADER HANDLING ==========
+  const loader = document.getElementById("site-loader");
+  const curtain = document.getElementById("curtain");
+  
+  if (loader) {
+    const MIN_TIME = mobile ? 1000 : 2000; // Shorter loader on mobile
+    const start = Date.now();
+
+    if (document.readyState === 'complete') {
+      const elapsed = Date.now() - start;
+      const wait = Math.max(0, MIN_TIME - elapsed);
+      
+      setTimeout(() => {
+        hideLoader(loader, curtain);
+      }, wait);
+    } else {
+      window.addEventListener("load", () => {
+        const elapsed = Date.now() - start;
+        const wait = Math.max(0, MIN_TIME - elapsed);
+
+        setTimeout(() => {
+          hideLoader(loader, curtain);
+        }, wait);
+      });
+    }
+
+    setTimeout(() => {
+      if (loader.style.display !== "none") {
+        hideLoader(loader, curtain);
+      }
+    }, 5000);
+  }
+  
+  function hideLoader(loader, curtain) {
+    loader.classList.add("exiting");
+    
+    setTimeout(() => {
+      loader.style.display = "none";
+      if (curtain) {
+        curtain.classList.add("open");
+      }
+    }, 1000);
+  }
 });
 
-toggleElements.forEach(el => toggleObserver.observe(el));
+// ========== VISIBILITY CHANGE HANDLER ==========
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    document.querySelectorAll("video").forEach(video => {
+      if (!video.paused) video.pause();
+    });
+  }
+});
+
+// ========== MOBILE-SPECIFIC CSS ==========
+const mobileCSS = `
+@media (max-width: 768px) {
+  .scroll-video canvas {
+    display: none !important;
+  }
+  
+  .scroll-video video {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .scroll-video {
+    height: 100vh !important;
+  }
+  
+  .scroll-spacer {
+    display: none;
+  }
+  
+  .sticky-wrap {
+    position: relative !important;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .overlay-content {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  
+  .text-panel {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+    margin: 0 20px;
+    width: auto !important;
+  }
+  
+  .section-title {
+    font-size: 2rem !important;
+  }
+  
+  .meta-bar {
+    display: none !important;
+  }
+  
+  .side-label {
+    display: none !important;
+  }
+  
+  .spotlight, .corner-light {
+    display: none !important;
+  }
+}
+
+/* Desktop canvas visible */
+.desktop-device .scroll-video canvas {
+  display: block;
+}
+
+.desktop-device .scroll-video video {
+  display: none;
+}
+`;
+
+// Add CSS to page
+const styleElement = document.createElement('style');
+styleElement.textContent = mobileCSS;
+document.head.appendChild(styleElement);
