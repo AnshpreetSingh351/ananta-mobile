@@ -212,28 +212,35 @@ class MobileScrollVideo {
 
     this.onScroll = this.onScroll.bind(this);
 
-    this.video.addEventListener("loadedmetadata", () => {
-      this.video.pause(); // we control it via scroll
-      window.addEventListener("scroll", this.onScroll, { passive: true });
-      this.onScroll(); // initial sync
-    });
+ this.video.addEventListener("loadedmetadata", () => {
+  const pixelsPerSecond = 800; // 🎬 controls how long the section stays (bigger = slower, more cinematic)
+  const totalScroll = this.video.duration * pixelsPerSecond;
+
+  // Make section tall enough so it stays pinned until video finishes
+  this.section.style.height = `calc(100vh + ${totalScroll}px)`;
+
+  this.video.pause(); // we control it via scroll
+  window.addEventListener("scroll", this.onScroll, { passive: true });
+  this.onScroll(); // initial sync
+});
   }
 onScroll() {
   const sectionTop = this.section.offsetTop;
   const sectionHeight = this.section.offsetHeight;
   const windowH = window.innerHeight;
 
-  const scrollLength = Math.max(1, sectionHeight - windowH); // prevent divide by 0
+  // Total scrollable distance while this section is sticky
+  const scrollLength = Math.max(1, sectionHeight - windowH);
   const scrolled = window.scrollY - sectionTop;
 
   let progress = scrolled / scrollLength;
   progress = Math.min(Math.max(progress, 0), 1);
 
   if (this.video.duration) {
-    const target = progress * this.video.duration;
+    const targetTime = progress * this.video.duration;
 
-    // 🎬 Smooth, slow cinematic easing (perfect for iPhone 13)
-    this.video.currentTime += (target - this.video.currentTime) * 0.18;
+    // Smooth cinematic easing
+    this.video.currentTime += (targetTime - this.video.currentTime) * 0.15;
   }
 }
 }
